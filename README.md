@@ -19,6 +19,7 @@ There are 3 evaluation functions for different experiments:
 (3) "eval_test47": experiments in Section 3.3 to assess model performance on test dataset 4-7.  
 In the main function in "eval.py", you can modify the model class, model path, and evaluation function to reproduce the certain results in our study. The evaluation results will be presetned under "results" fofolder.
  
-6. If you want to trained your own model, you can run "train.py" and modify the training hyper-parameters. The meaning of hyper-parameters are as follows:  
-
-
+5. If you want to trained your own model, you can run "train.py" and modify the training hyper-parameters.
+The meaning of hyper-parameters are annotated at the beginning of "train.py" when these variables are defined.  
+In the main function in "train.py", you can modify the hyper-parameters for training.
+Our models were distributed trained using 4 Nvidia Tesla V100.
