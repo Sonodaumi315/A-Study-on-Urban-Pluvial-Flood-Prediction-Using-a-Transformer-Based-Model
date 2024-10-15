@@ -22,4 +22,5 @@ In the main function in "eval.py", you can modify the model class, model path, a
 5. If you want to trained your own model, you can run "train.py" and modify the training hyper-parameters.
 The meaning of hyper-parameters are annotated at the beginning of "train.py" when these variables are defined.  
 In the main function in "train.py", you can modify the hyper-parameters for training.
+The saved models during training are under "models/***start_time_of_training___" folder.  
 Our models were distributed trained using 4 Nvidia Tesla V100.
