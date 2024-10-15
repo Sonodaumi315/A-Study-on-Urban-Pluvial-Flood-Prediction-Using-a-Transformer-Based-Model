@@ -10,7 +10,7 @@ pip install -r requirements.txt
 After unzip the file, please run "A_LoadData.py" to get 2 datafile, "X_data.npz" and "wsheds.npz".  
 Then, copy "X_data.npz", "wsheds.npz", and "Datafiles" into the folder "data" .
 
-3. Download the published trained model parameters of MobileViTv2 (or ResU-Net) from Releases for your test (Don't download the code in the releases). Copy the model you downloaded into the folder "models".
+3. Download the published trained model parameters of MobileViTv2 (or ResU-Net) from Releases for your test (Please don't download the outdated code in the releases). Copy the model you downloaded into the folder "models".
 
 4. "eval.py" under "code" folder can be employed for model evaluation.
 There are 3 evaluation functions for different experiments:  
