@@ -1,1 +1,1 @@
-Please copy downloaded models into this file.
+Please copy downloaded models into this folder.
