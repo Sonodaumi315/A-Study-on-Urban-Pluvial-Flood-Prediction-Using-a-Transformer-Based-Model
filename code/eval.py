@@ -627,6 +627,6 @@ if __name__=="__main__":
     model_test_path = "../models/MobileViTv2-basic.bin"
     #model_test_path = "../models/MobileViTv2-augs.bin"
     
-    eval_valid(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json"))# experiments in Section 3.2 and Appendix A
-    #eval_test14(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json")) # experiments in Section 3.3 test dataset 1-4
-    #eval_test47(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json")) # experiments in Section 3.3 test dataset 4-7
+    eval_valid(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json"))# experiments in Section 3.2 and Appendix A to assess model performance on validation dataset
+    #eval_test14(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json")) # experiments in Section 3.3 to assess model performance on test dataset 1-4
+    #eval_test47(model_test_path, model_class, 5, True, True, results_path = model_test_path.replace("../models/", "").replace(".bin", ".json")) # experiments in Section 3.3 to assess model performance on test dataset 4-7

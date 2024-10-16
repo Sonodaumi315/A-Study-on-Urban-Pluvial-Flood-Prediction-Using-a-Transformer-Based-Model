@@ -482,9 +482,7 @@ def make_dataset2(batch_size = 1, eval_batch_size = 5, train_data_size = 119*56,
     else:
         print(" dataset_cache:%s not exists"%(dataset_cache))
         train_dataset = UfloodDataset(patchfx,patchfy,patchfm,len(inputnames),rainvariables,select_train_patchrows,select_train_rain,rnvar,tsize,True,augs)
-        print(" rnm1")
         torch.save(train_dataset, dataset_cache, pickle_protocol = 4)
-        print(" rnm2")
     st_time2 = time.time()
     print("   time for make Uflood train dataset ", st_time2-st_time)
     if augs == True:
