@@ -3,7 +3,7 @@ will be updated as soon as possibile
 # A-Study-on-Urban-Pluvial-Flood-Prediction-Using-a-Transformer-Based-Model
 Data, codes, and model parameters in the study of Predicting Urban Pluvial Flood Water Depth Using a Transformer-Based Deep Learning Model with Data Augmentation (Since our research has not yet been formally published, only the code related to the model structure is publicly available)
 
-This is the instruction for utilizing the codes and data from the study of **Predicting Urban Pluvial Flood Water Depth Using a Hybrid Deep Learning Model Integrating Transformer and CNN with Data Augmentation**
+This is the instruction for utilizing the codes and data from the study of **Urban Pluvial Flood Maximum Water Depth Prediction Using a Hybrid Deep Learning Model Integrating Transformer and CNN with Data Augmentation**
 
 1. Install python dependencies by running:  
 pip install -r requirements.txt
