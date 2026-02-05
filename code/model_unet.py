@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-#Double conv
 class Double_Conv2d(nn.Module):
     def __init__(self, in_channel, out_channel, res = True):
         super(Double_Conv2d, self).__init__()
@@ -34,25 +33,25 @@ class Double_Conv2d(nn.Module):
             out += res
             
         out = self.leakyrelu(out)
-        return out
-    
-# UpBlock
+        return out    
+
+# 上采样块
 class Up_Block(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(Up_Block, self).__init__()
-        self.conv = Double_Conv2d(in_channel+out_channel, out_channel, res = True)
+        self.conv = Double_Conv2d(in_channel+out_channel, out_channel, res = True)  # 卷积
         self.up = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, inputs2, inputs1):
-        results2 = self.up(inputs2)  # upsampling
+        results2 = self.up(inputs2)  # 上采样
         padding = (results2.size()[-1] - inputs1.size()[-1]) // 2  # shape(batch, channel, width, height)
         results1 = F.pad(inputs1, 2 * [padding, padding])
-        results = torch.cat([results1, results2], 1) 
-        return self.conv(results)
+        results = torch.cat([results1, results2], 1)  # 合并
+        return self.conv(results)  # 卷积
 
-class ResUNet(nn.Module):
-    def __init__(self, in_channel = 6, base_filters = 64, ndepth = 5):
-        super(ResUNet, self).__init__()
+class UNET(nn.Module):
+    def __init__(self, in_channel = 6, base_filters = 128, ndepth = 5):
+        super(UNET, self).__init__()
         self.in_channel   = in_channel
         self.base_filters = base_filters
         self.ndepth       = ndepth
@@ -62,7 +61,8 @@ class ResUNet(nn.Module):
         self.leakyrelu    = nn.LeakyReLU(negative_slope = 0.2, inplace=True)
         self.convf        = nn.Conv2d(self.base_filters, 1, kernel_size=1, padding='same')
         
-        #filters = [64, 128, 256, 512, 512]
+        # 特征缩放
+        #filters = [16, 32, 64, 128, 256]  # 特征数列表
         filters = []
         for i in range(self.ndepth):
             a = self.base_filters * (2**i)
@@ -83,13 +83,8 @@ class ResUNet(nn.Module):
         setattr(self, "upsample%d"%(self.ndepth-1), Up_Block(filters[self.ndepth-1]+self.raindepth, filters[self.ndepth-1]))
         for i in range(self.ndepth-2, -1, -1):
             setattr(self, "upsample%d"%(i), Up_Block(filters[i+1], filters[i]))
-        
-        print("---model config---")
-        print(" filters ",filters)
-        print(" raindim ", self.raindim)
-        print(" raindepth ", self.raindepth)
 
-    def forward(self, inputs, rain_p, labels = None):
+    def forward(self, inputs, rain_p, labels = None, fac = None, mask = None):
         
         batch_size = inputs.shape[0]
         skip_x = []
