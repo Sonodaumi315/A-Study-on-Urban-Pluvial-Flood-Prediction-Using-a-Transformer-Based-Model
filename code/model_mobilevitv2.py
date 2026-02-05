@@ -1,6 +1,21 @@
+# Copyright (c) 2015-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the CC-by-NC license found in the
+# LICENSE file in the root directory of this source tree.
+#
+
+'''These modules are adapted from those of timm, see
+https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+'''
+
 import torch
 import torch.nn as nn
+from functools import partial
 import torch.nn.functional as F
+
+import torch
+import torch.nn as nn
 import math
 
 # 上采样块
@@ -11,17 +26,18 @@ class Up_Block(nn.Module):
                 nn.Conv2d(in_channel_down+in_channel_up, in_channel_down+in_channel_up, 3, 1, 1, groups=in_channel_down+in_channel_up, bias=False),
                 nn.BatchNorm2d(in_channel_down+in_channel_up),
                 nn.LeakyReLU(negative_slope = 0.2, inplace=True),
+                #nn.Dropout(0.2),
                 nn.Conv2d(in_channel_down+in_channel_up, out_channel, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(out_channel),
             )
         self.up = nn.Upsample(scale_factor=2, mode='bilinear')
 
     def forward(self, inputs2, inputs1):
-        results2 = self.up(inputs2)  # upsampling
+        results2 = self.up(inputs2)  # 上采样
         padding = (results2.size()[-1] - inputs1.size()[-1]) // 2  # shape(batch, channel, width, height)
         results1 = F.pad(inputs1, 2 * [padding, padding])
-        results = torch.cat([results1, results2], 1)  
-        return self.conv(results)  
+        results = torch.cat([results1, results2], 1)  # 合并
+        return self.conv(results)  # 卷积
     
 def conv_bn(inp, oup, stride):
     return nn.Sequential(
@@ -30,7 +46,15 @@ def conv_bn(inp, oup, stride):
         nn.LeakyReLU(negative_slope = 0.2, inplace=True),
     )
 
+def conv_1x1_bn(inp, oup):
+    return nn.Sequential(
+        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
+        nn.BatchNorm2d(oup),
+        nn.LeakyReLU(negative_slope = 0.2, inplace=True)
+    )
+
 class LinearSelfAttention(nn.Module):
+
     def __init__(self, embed_dim, attn_dropout = 0.0, bias = False, *args, **kwargs):
         super(LinearSelfAttention, self).__init__()
 
@@ -70,6 +94,7 @@ class LinearSelfAttention(nn.Module):
         return out
 
 class LinearAttnFFN(nn.Module):
+
     def __init__(self, embed_dim, ffn_latent_dim, patch_size, n_patches, attn_dropout = 0.0, dropout = 0.1, ffn_dropout = 0.0, *args, **kwargs, ):
         super().__init__()
         attn_unit = LinearSelfAttention(embed_dim = embed_dim, attn_dropout = attn_dropout, bias = True)
@@ -98,7 +123,6 @@ class LinearAttnFFN(nn.Module):
 class MobileViTBlockv2(nn.Module):
     def __init__(self, inp, stride, transformer_channels, ffn_dim, patch_h, patch_w, n_patches, num_layers, dropout = .0, attn_dropout = .0, ffn_dropout =.0):
         super(MobileViTBlockv2, self).__init__()
-        print("------MobileViTBlockv2 inp:%d stride:%d transformer_channels:%d ffn_dim:%d patch_size:%d n_patches:%d num_layers:%d"%(inp, stride, transformer_channels, ffn_dim, patch_h*patch_w, n_patches, num_layers))
         self.stride = stride
         self.patch_h = patch_h
         self.patch_w = patch_w
@@ -184,28 +208,40 @@ class InvertedResidual(nn.Module):
         self.stride = stride
         assert stride in [1, 2]
 
+        #hidden_dim = min(round(inp * expand_ratio), 1024)
         hidden_dim = round(inp * expand_ratio)
         self.use_res_connect = self.stride == 1 and inp == oup
-        print("------InvertedResidual inp:%d oup:%d stride:%d expand_ratio:%d use_res_connect:%d"%(inp, oup, stride, expand_ratio, self.use_res_connect))
         if expand_ratio == 1:
             self.conv = nn.Sequential(
+                #--------------------------------------------#
+                #   进行3x3的逐层卷积，进行跨特征点的特征提取
+                #--------------------------------------------#
                 nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.LeakyReLU(negative_slope = 0.2, inplace=True),
-                
+                #-----------------------------------#
+                #   利用1x1卷积进行通道数的调整
+                #-----------------------------------#
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(oup),
             )
         else:
             self.conv = nn.Sequential(
+                #-----------------------------------#
+                #   利用1x1卷积进行通道数的上升
+                #-----------------------------------#
                 nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.LeakyReLU(negative_slope = 0.2, inplace=True),
-                
+                #--------------------------------------------#
+                #   进行3x3的逐层卷积，进行跨特征点的特征提取
+                #--------------------------------------------#
                 nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.LeakyReLU(negative_slope = 0.2, inplace=True),
-                
+                #-----------------------------------#
+                #   利用1x1卷积进行通道数的下降
+                #-----------------------------------#
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(oup),
             )
@@ -216,10 +252,11 @@ class InvertedResidual(nn.Module):
         else:
             return self.conv(x)
 
-class MobileNetViTv2(nn.Module):
-    def __init__(self, input_size = 256, input_channel = 64, final_channel = 1, width_mult=1., dropout = .2, attn_dropout = .0, ffn_dropout = .2):
-        super(MobileNetViTv2, self).__init__()
-
+class MobileNetViT2(nn.Module):
+    def __init__(self, input_size=256, final_channel = 1, width_mult=1., dropout = .2, attn_dropout = .0, ffn_dropout = .2):
+        super(MobileNetViT2, self).__init__()
+        
+        input_channel = 64
         interverted_residual_setting = [
             # t, c, n, s
             [4, 128, 2, 2,   0,   0, 0,],
@@ -228,22 +265,16 @@ class MobileNetViTv2(nn.Module):
             [4, 512, 5, 2, 512,1024, 2,],
             [4, 512, 5, 2, 512,1024, 2,],
         ]
-        
         input_channel = int(input_channel * width_mult)
         self.input_channel = input_channel
         self.final_channel = final_channel
         self.interverted_residual_setting = interverted_residual_setting
         
-        print("----interverted_residual_setting ")
-        for setting in interverted_residual_setting:
-            print("       ", setting)
-        print("dropout:%.3lf attn_dropou:%.3lf ffn_dropout:%.3lf"%(dropout, attn_dropout, ffn_dropout))
         assert input_size % 32 == 0
         self.features = [conv_bn(6, self.input_channel, 1)]
         self.decoders = []
         
 
-        print("------final_conv: %d"%(self.final_channel))
         self.depth = 0
         self.outs_depth = [0]
         self.is_mit = [0]
@@ -271,12 +302,9 @@ class MobileNetViTv2(nn.Module):
                     self.is_mit.append(1)
                     break
                 input_channel = output_channel
-            print("----layer-%d   n-%d  cnt-%d"%(self.depth, n, cnt))
             self.outs_depth.append(cnt)
         
         self.outs_depth = self.outs_depth[:-1]
-        print(" self.outs_depth ", self.outs_depth)
-        print(" self.is_mit ", self.is_mit)
         self.features = nn.Sequential(*self.features)
         self.decoders = nn.Sequential(*self.decoders)
 
@@ -299,7 +327,7 @@ class MobileNetViTv2(nn.Module):
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
     
-    def forward(self, inputs, rain_p, labels = None):
+    def forward(self, inputs, rain_p, labels = None, mask = None, ssl_train = False):
         x = inputs
         outs = []
         cnt = 0
@@ -315,9 +343,11 @@ class MobileNetViTv2(nn.Module):
         
         for i in range(self.depth):
             x = self.decoders[self.depth-1-i](x, outs[self.depth-1-i])
-                
+        
+        cls = None
+        
         x = torch.squeeze(x, 1) 
-        if labels is not None: #supervised
+        if labels is not None:#supervised
             labels = torch.squeeze(labels, 3)
             mseloss  = self.MSELoss(x, labels)
         else:
@@ -326,5 +356,6 @@ class MobileNetViTv2(nn.Module):
         output = {
             "loss": mseloss,
             "results": x,
+            "cls": cls
         }
         return output
