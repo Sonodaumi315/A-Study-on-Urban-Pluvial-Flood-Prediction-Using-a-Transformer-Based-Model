@@ -1,14 +1,3 @@
-# Copyright (c) 2015-present, Facebook, Inc.
-# All rights reserved.
-#
-# This source code is licensed under the CC-by-NC license found in the
-# LICENSE file in the root directory of this source tree.
-#
-
-'''These modules are adapted from those of timm, see
-https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
-'''
-
 import torch
 import torch.nn as nn
 from functools import partial
